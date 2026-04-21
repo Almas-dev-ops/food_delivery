@@ -6,6 +6,7 @@ import com.app.fooddelivery.restaurant.entity.Restaurant;
 import com.app.fooddelivery.restaurant.service.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class RestaurantController {
     private  final RestaurantService service;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public RestaurantResponse create(@RequestBody
                                          @Valid CreateRestaurantRequest request){
         return service.create(request);
@@ -32,6 +34,11 @@ public class RestaurantController {
     public Restaurant getById(
             @PathVariable Long id){
         return service.getById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id){
+        service.delete(id);
     }
 
 }

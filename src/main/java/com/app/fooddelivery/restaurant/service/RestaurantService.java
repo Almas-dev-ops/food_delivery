@@ -46,5 +46,11 @@ public class RestaurantService {
         return mapToResponse(saved);
     }
 
+    public void delete(Long id){
+        Restaurant toDelete = getById(id);
+        repository.deleteById(toDelete.getId());
+
+    }
+
 
 }
