@@ -30,5 +30,11 @@ public class GlobalExceptionHandler {
         return errors;
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String ,String> handleNotFound(NotFoundException ex){
+        return Map.of("error",ex.getMessage());
+    }
+
 
 }

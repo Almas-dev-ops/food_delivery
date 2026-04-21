@@ -1,5 +1,6 @@
 package com.app.fooddelivery.restaurant.service;
 
+import com.app.fooddelivery.common.exception.NotFoundException;
 import com.app.fooddelivery.restaurant.dto.CreateRestaurantRequest;
 import com.app.fooddelivery.restaurant.dto.RestaurantResponse;
 import com.app.fooddelivery.restaurant.entity.Restaurant;
@@ -25,7 +26,7 @@ public class RestaurantService {
 
     public  Restaurant getById( Long id){
         return repository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Restaurant not found"));
+                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
     }
 
     public RestaurantResponse mapToResponse(Restaurant restaurant){
@@ -46,9 +47,19 @@ public class RestaurantService {
         return mapToResponse(saved);
     }
 
+    public RestaurantResponse update(Long id, CreateRestaurantRequest request){
+        Restaurant restaurant = repository.findById(id)
+                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+
+        restaurant.setName(request.getName());
+        restaurant.setDescription(request.getDescription());
+        return mapToResponse(repository.save(restaurant));
+    }
+
     public void delete(Long id){
-        Restaurant toDelete = getById(id);
-        repository.deleteById(toDelete.getId());
+        Restaurant restaurant = repository.findById(id)
+                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+        repository.delete(restaurant);
 
     }
 
