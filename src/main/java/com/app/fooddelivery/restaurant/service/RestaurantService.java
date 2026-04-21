@@ -6,8 +6,11 @@ import com.app.fooddelivery.restaurant.dto.RestaurantResponse;
 import com.app.fooddelivery.restaurant.entity.Restaurant;
 import com.app.fooddelivery.restaurant.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.print.DocFlavor;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,25 +19,15 @@ import java.util.List;
 public class RestaurantService {
 
     private final RestaurantRepository repository;
-
-    public List<RestaurantResponse> getAll(){
-        return repository.findAll()
-                .stream()
-                .map(restaurant -> mapToResponse(restaurant))
-                .toList();
+ //CRUD
+    public Page<RestaurantResponse> getAll(Pageable pageable){
+        return repository.findAll(pageable)
+                .map(restaurant -> mapToResponse(restaurant));
     }
 
     public  Restaurant getById( Long id){
         return repository.findById(id)
                 .orElseThrow(()-> new NotFoundException("Restaurant not found"));
-    }
-
-    public RestaurantResponse mapToResponse(Restaurant restaurant){
-        return RestaurantResponse.builder()
-                .id(restaurant.getId())
-                .name(restaurant.getName())
-                .description(restaurant.getDescription())
-                .build();
     }
 
     public RestaurantResponse create(CreateRestaurantRequest request){
@@ -62,6 +55,22 @@ public class RestaurantService {
         repository.delete(restaurant);
 
     }
+
+// Mapper
+    public RestaurantResponse mapToResponse(Restaurant restaurant){
+        return RestaurantResponse.builder()
+                .id(restaurant.getId())
+                .name(restaurant.getName())
+                .description(restaurant.getDescription())
+                .build();
+    }
+
+// Pageable
+    public Page<RestaurantResponse> search(String name, Pageable pageable){
+        return repository.findByNameContainingIgnoreCase(name, pageable)
+                .map(restaurant -> mapToResponse(restaurant));
+    }
+
 
 
 }

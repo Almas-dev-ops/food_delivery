@@ -6,6 +6,8 @@ import com.app.fooddelivery.restaurant.entity.Restaurant;
 import com.app.fooddelivery.restaurant.service.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +19,7 @@ import java.util.List;
 public class RestaurantController {
 
     private  final RestaurantService service;
-
+//CRUD
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public RestaurantResponse create(@RequestBody
@@ -26,8 +28,8 @@ public class RestaurantController {
     }
 
     @GetMapping
-    public List<RestaurantResponse> getAll(){
-        return service.getAll();
+    public Page<RestaurantResponse> getAll(Pageable pageable){
+        return service.getAll(pageable);
     }
 
     @GetMapping("/{id}")
@@ -47,6 +49,14 @@ public class RestaurantController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id){
         service.delete(id);
+    }
+
+//    Pagination
+    @GetMapping("/search")
+    public Page<RestaurantResponse> search(
+            @RequestParam String name,
+            Pageable pageable){
+        return service.search(name, pageable);
     }
 
 }
