@@ -4,6 +4,7 @@ import com.app.fooddelivery.restaurant.dto.CreateRestaurantRequest;
 import com.app.fooddelivery.restaurant.dto.RestaurantResponse;
 import com.app.fooddelivery.restaurant.entity.Restaurant;
 import com.app.fooddelivery.restaurant.service.RestaurantService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,8 @@ public class RestaurantController {
     private  final RestaurantService service;
 
     @PostMapping
-    public RestaurantResponse create(@RequestBody CreateRestaurantRequest request){
+    public RestaurantResponse create(@RequestBody
+                                         @Valid CreateRestaurantRequest request){
         return service.create(request);
     }
 
