@@ -3,6 +3,7 @@ package com.app.fooddelivery.auth.service;
 import com.app.fooddelivery.auth.dto.LoginRequest;
 import com.app.fooddelivery.auth.dto.RegisterRequest;
 import com.app.fooddelivery.security.JwtService;
+import com.app.fooddelivery.user.entity.Role;
 import com.app.fooddelivery.user.entity.User;
 import com.app.fooddelivery.user.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,9 @@ public class AuthService {
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ROLE_USER)
                 .build();
+
 
         userRepository.save(user);
         return "User registered";
@@ -46,7 +49,7 @@ public class AuthService {
             throw new RuntimeException("invalid password");
         }
 
-        return jwtService.generateToken(user.getUsername());
+        return jwtService.generateToken(user.getUsername(),user.getRole().name());
     }
 
 

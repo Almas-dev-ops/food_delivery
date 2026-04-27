@@ -11,9 +11,10 @@ public class JwtService {
     private final String SECRET = "eeeefgghjjjkdsssssssssssecret-key-very-long";
 
     //генерация токена
-    public String generateToken(String username) {
+    public String generateToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 86_400_000))
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
@@ -23,9 +24,9 @@ public class JwtService {
     //  проверка токена
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRET.getBytes())
+                .setSigningKey(Keys.hmacShaKeyFor(SECRET.getBytes()))
                 .build()
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
