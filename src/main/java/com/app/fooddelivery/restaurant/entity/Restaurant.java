@@ -1,5 +1,6 @@
 package com.app.fooddelivery.restaurant.entity;
 
+import com.app.fooddelivery.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,10 @@ public class Restaurant {
     private String name;
     private String description;
     private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
 
 }

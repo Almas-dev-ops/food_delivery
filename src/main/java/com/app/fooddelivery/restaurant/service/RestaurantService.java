@@ -5,9 +5,12 @@ import com.app.fooddelivery.restaurant.dto.CreateRestaurantRequest;
 import com.app.fooddelivery.restaurant.dto.RestaurantResponse;
 import com.app.fooddelivery.restaurant.entity.Restaurant;
 import com.app.fooddelivery.restaurant.repository.RestaurantRepository;
+import com.app.fooddelivery.user.entity.User;
+import com.app.fooddelivery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.print.DocFlavor;
@@ -19,10 +22,21 @@ import java.util.List;
 public class RestaurantService {
 
     private final RestaurantRepository repository;
+    private final UserRepository userRepository;
  //CRUD
     public Page<RestaurantResponse> getAll(Pageable pageable){
-        return repository.findAll(pageable)
-                .map(restaurant -> mapToResponse(restaurant));
+
+        String username = getCurrentUsername();
+        Page<Restaurant> page;
+
+        if (isAdmin()){
+            page = repository.findAll(pageable);
+        }else {
+            page = repository.findByOwnerUsername(username, pageable);
+        }
+
+
+        return page.map(restaurant -> mapToResponse(restaurant));
     }
 
     public  Restaurant getById( Long id){
@@ -31,9 +45,16 @@ public class RestaurantService {
     }
 
     public RestaurantResponse create(CreateRestaurantRequest request){
+
+        String username = getCurrentUsername();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(()->new RuntimeException("user not found"));
+
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .owner(user) // владелец
                 .createdAt(LocalDateTime.now())
                 .build();
         Restaurant saved = repository.save(restaurant);
@@ -52,6 +73,13 @@ public class RestaurantService {
     public void delete(Long id){
         Restaurant restaurant = repository.findById(id)
                 .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+
+        String username = getCurrentUsername();
+        boolean isOwner = restaurant.getOwner().getUsername().equals(username);
+
+        if (!isOwner && !isAdmin()){
+            throw new RuntimeException("Access denied");
+        }
         repository.delete(restaurant);
 
     }
@@ -70,6 +98,31 @@ public class RestaurantService {
         return repository.findByNameContainingIgnoreCase(name, pageable)
                 .map(restaurant -> mapToResponse(restaurant));
     }
+
+    private String getCurrentUsername(){
+        return SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+    }
+
+    public Page<RestaurantResponse> getMyRestaurants(Pageable pageable){
+        String username = getCurrentUsername();
+
+        return repository.findByOwnerUsername(username,pageable)
+                .map(restaurant -> mapToResponse(restaurant));
+
+    }
+
+    private boolean isAdmin() {
+    return SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getAuthorities()
+            .stream()
+            .anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+
+
 
 
 

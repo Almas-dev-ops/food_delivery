@@ -59,4 +59,9 @@ public class RestaurantController {
         return service.search(name, pageable);
     }
 
+    @GetMapping("/my")
+    public Page<RestaurantResponse> myRestaurants(Pageable pageable){
+        return service.getMyRestaurants(pageable);
+    }
+
 }
