@@ -1,7 +1,6 @@
 package com.app.fooddelivery.auth.controller;
 
-import com.app.fooddelivery.auth.dto.LoginRequest;
-import com.app.fooddelivery.auth.dto.RegisterRequest;
+import com.app.fooddelivery.auth.dto.*;
 import com.app.fooddelivery.auth.service.AuthService;
 import com.app.fooddelivery.security.JwtService;
 import com.app.fooddelivery.user.entity.User;
@@ -28,7 +27,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody @Valid LoginRequest request) {
+    public AuthResponse login(@RequestBody @Valid LoginRequest request) {
         return authService.login(request);
     }
 
@@ -52,6 +51,20 @@ public class AuthController {
                 "username", auth.getName(),
                 "roles", auth.getAuthorities()
         );
+    }
+
+    @PostMapping("/refresh")
+    public Map<String, String> refresh(@Valid @RequestBody RefreshRequest request){
+        
+        String newAccessToken = authService.refresh(request.refreshToken());
+        return Map.of("accessToken", newAccessToken);
+    }
+
+    @PostMapping("/logout")
+    public Map<String,String> logout(@Valid @RequestBody LogoutRequest request){
+        authService.logout(request.refreshToken());
+
+        return Map.of("message", "Logged out successfully");
     }
 
 
