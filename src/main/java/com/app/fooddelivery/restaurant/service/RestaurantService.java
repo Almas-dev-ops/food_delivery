@@ -1,6 +1,8 @@
 package com.app.fooddelivery.restaurant.service;
 
 import com.app.fooddelivery.common.exception.NotFoundException;
+import com.app.fooddelivery.common.exception.RestaurantNotFoundException;
+import com.app.fooddelivery.common.exception.UserNotFoudException;
 import com.app.fooddelivery.restaurant.dto.CreateRestaurantRequest;
 import com.app.fooddelivery.restaurant.dto.RestaurantResponse;
 import com.app.fooddelivery.restaurant.entity.Restaurant;
@@ -10,12 +12,11 @@ import com.app.fooddelivery.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import javax.print.DocFlavor;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,13 @@ public class RestaurantService {
         String username = getCurrentUsername();
         Page<Restaurant> page;
 
-        if (isAdmin()){
+        boolean isAdmin = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin){
             page = repository.findAll(pageable);
         }else {
             page = repository.findByOwnerUsername(username, pageable);
@@ -41,7 +48,7 @@ public class RestaurantService {
 
     public  Restaurant getById( Long id){
         return repository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+                .orElseThrow(()-> new RestaurantNotFoundException("Restaurant not found"));
     }
 
     public RestaurantResponse create(CreateRestaurantRequest request){
@@ -49,7 +56,7 @@ public class RestaurantService {
         String username = getCurrentUsername();
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(()->new RuntimeException("user not found"));
+                .orElseThrow(()->new UserNotFoudException("user not found"));
 
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName())
@@ -61,25 +68,22 @@ public class RestaurantService {
         return mapToResponse(saved);
     }
 
+   // @PreAuthorize("@restaurantSecurity.isOwner(#id, authentication.name)") //только владелец
+    @PreAuthorize("@restaurantSecurity.isOwner(#id, authentication.name) or hasRole('ADMIN')")
     public RestaurantResponse update(Long id, CreateRestaurantRequest request){
         Restaurant restaurant = repository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+                .orElseThrow(()-> new RestaurantNotFoundException("Restaurant not found"));
 
         restaurant.setName(request.getName());
         restaurant.setDescription(request.getDescription());
         return mapToResponse(repository.save(restaurant));
     }
 
+    @PreAuthorize("@restaurantSecurity.isOwner(#id, authentication.name) or hasRole('ADMIN')")
     public void delete(Long id){
         Restaurant restaurant = repository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Restaurant not found"));
+                .orElseThrow(()-> new RestaurantNotFoundException("Restaurant not found"));
 
-        String username = getCurrentUsername();
-        boolean isOwner = restaurant.getOwner().getUsername().equals(username);
-
-        if (!isOwner && !isAdmin()){
-            throw new RuntimeException("Access denied");
-        }
         repository.delete(restaurant);
 
     }
@@ -112,18 +116,5 @@ public class RestaurantService {
                 .map(restaurant -> mapToResponse(restaurant));
 
     }
-
-    private boolean isAdmin() {
-    return SecurityContextHolder.getContext()
-            .getAuthentication()
-            .getAuthorities()
-            .stream()
-            .anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-
-
-
-
 
 }

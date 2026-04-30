@@ -5,6 +5,8 @@ import com.app.fooddelivery.auth.dto.LoginRequest;
 import com.app.fooddelivery.auth.dto.RegisterRequest;
 import com.app.fooddelivery.auth.entity.RefreshToken;
 import com.app.fooddelivery.auth.repository.RefreshTokenRepository;
+import com.app.fooddelivery.common.exception.UserAlreadyExistsException;
+import com.app.fooddelivery.common.exception.UserNotFoudException;
 import com.app.fooddelivery.security.JwtService;
 import com.app.fooddelivery.user.entity.Role;
 import com.app.fooddelivery.user.entity.User;
@@ -30,7 +32,7 @@ public class AuthService {
 
         // проверка: существует пользователь?
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("User already exists");
+            throw new UserAlreadyExistsException("User already exists");
         }
 
         User user = User.builder()
@@ -60,10 +62,10 @@ public class AuthService {
     public AuthResponse login(LoginRequest request){
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(()-> new RuntimeException("User not found"));
+                .orElseThrow(()-> new UserNotFoudException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(),user.getPassword())){
-            throw new RuntimeException("Invalid password");
+            throw new IllegalArgumentException("Invalid password");
         }
 
         String accessToken = jwtService.generateAccessToken(
@@ -90,10 +92,10 @@ public class AuthService {
         refreshTokenRepository.findAll().forEach(t-> System.out.println("DB token: [" + t.getToken()+"]" ));
 
         RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(()-> new RuntimeException("Invalid refresh token"));
+                .orElseThrow(()-> new IllegalArgumentException("Invalid refresh token"));
 
         if (token.getExpiryDate().isBefore(LocalDateTime.now())){
-            throw new RuntimeException("Refresh token expired");
+            throw new IllegalArgumentException("Refresh token expired");
         }
 
         User user = token.getUser();
@@ -105,7 +107,7 @@ public class AuthService {
 
     public void logout(String refreshToken) {
         RefreshToken token = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
         refreshTokenRepository.delete(token);
 
     }
